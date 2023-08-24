@@ -1,0 +1,45 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  margin: auto;
+  max-width: 38rem;
+  -webkit-app-region: drag;
+  font-family: "Josefin Sans", sans-serif;
+}
+
+.container {
+  background-color: rgba(15,17,20, 0.5);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  -webkit-user-drag: none;
+}
+
+/* .title-bar {
+  position: absolute;
+  display: none;
+  left: 500px;
+}
+
+.title-bar:hover {
+  display: block;
+} */
+
+#lyrics {
+  list-style-type: none;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  row-gap: 15px;
+  font-size: 2.5em;
+}
+
+.lyric {
+  font-weight: 300;
+}
+
+#current-lyric {
+  font-weight: 400;
+}
