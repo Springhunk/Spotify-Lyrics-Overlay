@@ -27,10 +27,6 @@ const createWindow = () => {
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
   mainWindow.setAlwaysOnTop(true, "floating");
-
-  // mainWindow.on("focus", () => {
-  //   mainWindow.setBackgroundColor("transparent");
-  // })
 };
 
 // This method will be called when Electron has finished
