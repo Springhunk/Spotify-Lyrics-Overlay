@@ -26,7 +26,7 @@ const spotifyApi= new SpotifyWebApi({
     redirectUri: redirectUri
 });
 
-if (process.env.SPOTIFY_ACCESS_TOKEN) {
+if (process.env.SPOTIFY_ACCESS_TOKEN != null) {
     spotifyApi.setAccessToken(process.env.SPOTIFY_ACCESS_TOKEN);
 }
 
@@ -35,14 +35,14 @@ app.get("/login", (req, res) => {
     res.redirect(authorizeURL);
 });
 
-app.get("/callback", (req, res) => {
+app.get("/callback", async (req, res) => {
     const authCode = req.query.code;
 
     if (spotifyApi.getAccessToken()) {
         res.send("Access token already exists.");
     } else {;
         try {
-            const data = spotifyApi.authorizationCodeGrant(authCode);
+            const data = await spotifyApi.authorizationCodeGrant(authCode);
 
             const accessToken = data.body["access_token"];
             const refreshToken = data.body["refresh_token"];
@@ -58,11 +58,6 @@ app.get("/callback", (req, res) => {
             res.status(500).send("Error obtaining tokens");
         }
     }
-
-    // getCurrentlyPlayingTrack(spotifyApi);
-    
-    // const albums = spotifyApi.getArtistAlbums('43ZHCT0cAZBISjO8DG9PnE');
-    // console.log('Artist albums', albums.body);
 });
 
 app.listen(PORT, () => {
