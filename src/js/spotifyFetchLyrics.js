@@ -16,14 +16,14 @@ const getCurrentLyrics = async () => {
 
         const playbackTime = await getCurrentTrackTime(spotifyApi);
 
-        console.log(lyrics);
+        // console.log(lyrics);
         console.log(playbackTime.progress_ms);
 
         const filePath = path.join(__dirname, "../lyrics.json");
         fs.writeFileSync(filePath, JSON.stringify(lyrics, null, 2));
     } catch {
         console.log("Error fetching lyrics, please try again.");
-    }
+    };
 }
 
-getCurrentLyrics();
+module.exports = { getCurrentLyrics };

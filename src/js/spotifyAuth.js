@@ -1,6 +1,7 @@
 const SpotifyWebApi = require("spotify-web-api-node");
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
 
 PORT = 8000
 
@@ -18,8 +19,6 @@ scopes = [
 
 const app = express();
 
-const { getCurrentlyPlayingTrack }  = require("./spotifyFetchTrack.js");
-
 const spotifyApi= new SpotifyWebApi({
     clientId: clientID,
     clientSecret: clientSecret,
@@ -27,8 +26,26 @@ const spotifyApi= new SpotifyWebApi({
 });
 
 if (process.env.SPOTIFY_ACCESS_TOKEN != null) {
-    spotifyApi.setAccessToken(process.env.SPOTIFY_ACCESS_TOKEN);
-}
+
+    const envPath = path.join(__dirname, "../../.env");
+    const fileMTime = fs.statSync(envPath).mtime;
+
+    const date = new Date(fileMTime);
+
+    const hour = date.getHours()
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+
+    const totalSecondsAfterModified = hour * 3600 + minutes * 60 + seconds;
+    const expirationTime = totalSecondsAfterModified + 3600;
+
+    if (totalSecondsAfterModified >= expirationTime) {
+        console.log("Token is expired.");
+    } else {
+        console.log("Token is available");
+        spotifyApi.setAccessToken(process.env.SPOTIFY_ACCESS_TOKEN);
+    }
+};
 
 app.get("/login", (req, res) => {
     const authorizeURL = spotifyApi.createAuthorizeURL(scopes)
