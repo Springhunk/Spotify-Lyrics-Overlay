@@ -1,14 +1,19 @@
 const SpotifyWebApi = require("spotify-web-api-node");
 
-const getCurrentTrackTime = (spotifyApi) => {
-    return spotifyApi.getMyCurrentPlaybackState()
-        .then((data) => {
-            console.log(JSON.stringify(data.body, null, 2));
-            return data.body;
-        })
-        .catch(() => {
-            console.log("Error getting current playback state.");
-        });
+const getCurrentTrackProgress = async (spotifyApi) => {
+    try {
+        const playbackState = await spotifyApi.getMyCurrentPlaybackState();
+        if (playbackState.body.is_playing) {
+            const progressMs = playbackState.body.progress_ms;
+            console.log('Current track progress:', progressMs, 'milliseconds');
+            return progressMs;
+        } else {
+            console.log('No track is currently playing.');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error getting current track progress:', error.message);
+    };
 };
 
 const getCurrentlyPlayingTrack = (spotifyApi) => {
@@ -23,5 +28,5 @@ const getCurrentlyPlayingTrack = (spotifyApi) => {
 
 module.exports = {
     getCurrentlyPlayingTrack,
-    getCurrentTrackTime
+    getCurrentTrackProgress,
 };
