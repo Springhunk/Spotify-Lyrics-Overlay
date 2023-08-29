@@ -61,6 +61,8 @@ if (process.env.SPOTIFY_ACCESS_TOKEN != null) {
                 });
             });
         });
+        var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
+        require('child_process').exec(start + ' ' + `http://localhost:${PORT}/login`);
     } else {
         console.log("Token is available");
         spotifyApi.setAccessToken(process.env.SPOTIFY_ACCESS_TOKEN);

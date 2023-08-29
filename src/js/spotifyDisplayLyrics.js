@@ -7,11 +7,12 @@ const { spotifyApi } = require("./spotifyAuth");
 const { getCurrentlyPlayingTrack ,getCurrentTrackProgress } = require("./spotifyFetchTrack");
 const { getCurrentLyrics } = require("./spotifyFetchLyrics");
 
+let lyricsJson = null;
+
 const loadLyrics = async () => {
-    getCurrentLyrics();
+    await getCurrentLyrics();
     
-    const lyricsJson = fs.readFileSync(path.join(__dirname, "../lyrics.json"));
-    console.log(JSON.parse(lyricsJson));
+    lyricsJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../lyrics.json")))["lines"];
 };
 
 const delay = async (ms) => {
@@ -19,6 +20,8 @@ const delay = async (ms) => {
 }
 
 const run = async () => {
+    await loadLyrics();
+    let offset = 500;
     let isPaused = false;
     
     const checkPlaybackState = async () => {
@@ -36,6 +39,7 @@ const run = async () => {
                 const artists = currentTrack.item.artists.map(artist => artist.name).join(", ");
                 
                 console.log(`New song is playing: ${currentTrack.item.name} - ${artists}`);
+                await loadLyrics();
             }
             
             previousTrack = currentTrack;
@@ -44,11 +48,31 @@ const run = async () => {
         }
     };
 
+    const syncLyrics = (trackProgress, lyrics) => {
+        let linesToShow = [];
+
+        lyrics.forEach((line) => {
+            const lineStartTime = parseInt(line.startTimeMs);
+            const lowerBound = trackProgress - offset;
+            const upperBound = trackProgress + offset;
+
+            if (lineStartTime >= lowerBound && lineStartTime <= upperBound) {
+                // console.log(line.words);
+                linesToShow.push(line.words);
+            };
+        });
+
+        if (linesToShow.length > 0) {
+            console.log(linesToShow.join("\n"));
+        };
+    };
+
     while (true) {
         let playbackStatePlaying = await checkPlaybackState();
 
         if (playbackStatePlaying) {
             let trackProgress = await getCurrentTrackProgress(spotifyApi);
+            syncLyrics(trackProgress, lyricsJson);
             await detectNewSong(spotifyApi)
 
             if (trackProgress === null) {
@@ -57,8 +81,10 @@ const run = async () => {
             } else {
                 isPaused = false;
             };
+        } else {
+
         };
-        await delay(1000);
+        await delay(500);
 
         if (isPaused) {
             console.log("Loop paused");
@@ -68,4 +94,3 @@ const run = async () => {
 };
 
 run();
-loadLyrics();
