@@ -12,13 +12,28 @@
   <div class="container">
     <div class="lyrics">
       <ul id="lyrics">
-        <li class="lyric" data-lyrics-line="1" id="current-lyric">Snow flakes in January</li>
-        <li class="lyric" data-lyrics-line="2">Heart warm like February</li>
-        <li class="lyric" data-lyrics-line="3">I wouldn't ordinarily</li>
-        <li class="lyric" data-lyrics-line="4">March to the drum, play a fool like April</li>
-        <li class="lyric" data-lyrics-line="5">May the best dance in a Juno bridal</li>
+        <li class="lyric" data-lyrics-line="1" id="current-lyric"></li>
+        <li class="lyric" data-lyrics-line="2"></li>
+        <li class="lyric" data-lyrics-line="3"></li>
+        <li class="lyric" data-lyrics-line="4"></li>
+        <li class="lyric" data-lyrics-line="5"></li>
       </ul>
     </div>
   </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const { ipcRenderer } = require("electron");
+
+      ipcRenderer.on("update-lyrics", (event, args) => {
+        const currentLyric = document.getElementById("current-lyric");
+        currentLyric.innerText = args[0];
+
+        for (let i = 1; i < args.length; i++) {
+          const nextLyric = document.getElementsByClassName("lyric");
+          nextLyric[i].innerText = args[i];
+        };
+      });
+    });
+  </script>
   </body>
 </html>
