@@ -48,23 +48,30 @@ const run = async () => {
         }
     };
 
+    let previousIndex = 0;
+
     const syncLyrics = (trackProgress, lyrics) => {
-        let linesToShow = [];
+        let lyricsIndex = 0;
 
         lyrics.forEach((line) => {
             const lineStartTime = parseInt(line.startTimeMs);
             const lowerBound = trackProgress - offset;
             const upperBound = trackProgress + offset;
+            lyricsIndex++;
 
             if (lineStartTime >= lowerBound && lineStartTime <= upperBound) {
-                // console.log(line.words);
-                linesToShow.push(line.words);
+                if (previousIndex != lyricsIndex) { ;
+                    console.log("Index: "+ lyricsIndex);
+                    console.log("Current Line: "+ line.words);
+                    let linesToShow = lyricsJson.slice(lyricsIndex, lyricsIndex+4);
+                    linesToShow.forEach((line) => {
+                        console.log(line.words);
+                    });
+                    previousIndex = lyricsIndex;
+                }
             };
         });
 
-        if (linesToShow.length > 0) {
-            console.log(linesToShow.join("\n"));
-        };
     };
 
     while (true) {
@@ -84,7 +91,8 @@ const run = async () => {
         } else {
 
         };
-        await delay(500);
+        // 500 usually
+        await delay(250);
 
         if (isPaused) {
             console.log("Loop paused");
