@@ -4,6 +4,7 @@ body {
   margin: auto;
   max-width: 38rem;
   -webkit-app-region: drag;
+  overflow: hidden;
   font-family: "Josefin Sans", sans-serif;
 }
 
@@ -16,16 +17,6 @@ body {
   font-size: 10px;
   -webkit-user-drag: none;
 }
-
-/* .title-bar {
-  position: absolute;
-  display: none;
-  left: 500px;
-}
-
-.title-bar:hover {
-  display: block;
-} */
 
 #lyrics {
   list-style-type: none;

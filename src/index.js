@@ -1,17 +1,17 @@
-const { app, BrowserWindow, ipcRenderer, ipcMain } = require('electron');
+const { app, BrowserWindow} = require('electron');
 const path = require("path");
 const fs = require("fs");
 
-const { spotifyApi } = require("./js/spotifyAuth");
+const { spotifyApi, checkToken, replaceToken, timeUntilTokenExpiration } = require("./js/spotifyAuth");
 
 const { getCurrentlyPlayingTrack, getCurrentTrackProgress } = require("./js/spotifyFetchTrack");
 const { getCurrentLyrics } = require("./js/spotifyFetchLyrics");
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+// Window Creation
 let mainWindow
 
 const createWindow = () => {
@@ -32,21 +32,15 @@ const createWindow = () => {
     title: "Spotify Lyrics Overlay"
   });
 
-  // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
   mainWindow.setAlwaysOnTop(true, "floating");
-
+  
+  checkToken();
   run();
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.on('ready', createWindow);
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
@@ -54,8 +48,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
@@ -74,6 +66,11 @@ const loadLyrics = async () => {
   };
 };
 
+// Check Availability
+const lyricsAvailable = (lyricsJson) => {
+  return lyricsJson["error"]; 
+};
+
 const displayLyricsOnWindow = (lyrics) => {
   if (mainWindow) {
     mainWindow.webContents.send("update-lyrics", lyrics);
@@ -86,6 +83,8 @@ const delay = async (ms) => {
 
 const run = async () => {
   await loadLyrics();
+
+  // Offset Bounds for Track Progress
   let offset = 500;
   let isPaused = false;
 
@@ -96,6 +95,7 @@ const run = async () => {
 
   let previousTrack = null;
 
+  // Detect New Song
   const detectNewSong = async (spotifyApi) => {
     try {
       const currentTrack = await getCurrentlyPlayingTrack(spotifyApi);
@@ -104,6 +104,7 @@ const run = async () => {
         const artists = currentTrack.item.artists.map(artist => artist.name).join(", ");
 
         console.log(`New song is playing: ${currentTrack.item.name} - ${artists}`);
+        displayLyricsOnWindow([`${currentTrack.item.name} - ${artists}`, "clear"]);
         await loadLyrics();
       }
 
@@ -115,6 +116,7 @@ const run = async () => {
 
   let previousIndex = 0;
 
+  // Sync Lyrics
   const syncLyrics = (trackProgress, lyrics) => {
     let lyricsIndex = 0;
 
@@ -124,48 +126,61 @@ const run = async () => {
       const upperBound = trackProgress + offset;
       lyricsIndex++;
 
+      // Check Bounds
       if (lineStartTime >= lowerBound && lineStartTime <= upperBound) {
         if (previousIndex != lyricsIndex) {
           let lyricsToDisplay = [line.words];
-          // displayLyricsOnWindow(line.words); // Emit the event
-          console.log("Index: " + lyricsIndex);
-          console.log("Current Line: " + line.words);
+          // console.log("Index: " + lyricsIndex);
+          // console.log("Current Line: " + line.words);
           let linesToShow = lyricsJson.slice(lyricsIndex, lyricsIndex + 4);
           linesToShow.forEach((line) => {
             lyricsToDisplay.push(line.words);
-            console.log(line.words);
+            // console.log(line.words);
           });
+
+          // Display
           displayLyricsOnWindow(lyricsToDisplay);
           previousIndex = lyricsIndex;
         }
       };
     });
-
   };
 
   while (true) {
-    let playbackStatePlaying = await checkPlaybackState();
+    try {
+      if (timeUntilTokenExpiration < 100) {
+        replaceToken();
 
-    if (playbackStatePlaying) {
-      let trackProgress = await getCurrentTrackProgress(spotifyApi);
-      syncLyrics(trackProgress, lyricsJson);
-      await detectNewSong(spotifyApi)
+        await delay(5000);
+      } else {;
+        let playbackStatePlaying = await checkPlaybackState();
 
-      if (trackProgress === null) {
-        console.log("Track paused");
-        isPaused = true;
-      } else {
-        isPaused = false;
+        if (playbackStatePlaying) {
+          let trackProgress = await getCurrentTrackProgress(spotifyApi);
+          syncLyrics(trackProgress, lyricsJson);
+          await detectNewSong(spotifyApi)
+
+          if (trackProgress === null) {
+            console.log("Track paused");
+            isPaused = true;
+          } else {
+            isPaused = false;
+          };
+        }
       };
-    } else {
 
-    };
-    // 500 usually
-    await delay(250);
+      await delay(500);
 
-    if (isPaused) {
-      console.log("Loop paused");
-      continue;
+      if (isPaused) {
+        console.log("Loop paused");
+        continue;
+      };
+    } catch (error) {
+      console.log(error);
+      console.log("Retrying...");
+      checkToken();
+
+      await delay(5000);
     };
   };
 };

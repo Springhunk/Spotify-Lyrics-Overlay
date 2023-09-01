@@ -24,14 +24,25 @@
     document.addEventListener("DOMContentLoaded", () => {
       const { ipcRenderer } = require("electron");
 
+      // Receive process
       ipcRenderer.on("update-lyrics", (event, args) => {
         const currentLyric = document.getElementById("current-lyric");
         currentLyric.innerText = args[0];
-
-        for (let i = 1; i < args.length; i++) {
-          const nextLyric = document.getElementsByClassName("lyric");
-          nextLyric[i].innerText = args[i];
-        };
+        if (args[1] === "clear") {
+          for (let i = 1; i < args.length; i++) {
+            const nextLyric = document.getElementsByClassName("lyric");
+            nextLyric[i].innerText = "";
+          };
+        } else {
+          try {
+            for (let i = 1; i < args.length; i++) {
+              const nextLyric = document.getElementsByClassName("lyric");
+              nextLyric[i].innerText = args[i];
+            };
+          } catch (error) {
+            console.log(error);
+          } 
+        }
       });
     });
   </script>

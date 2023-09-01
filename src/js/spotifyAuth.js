@@ -40,36 +40,52 @@ const totalTimeElapsed = (time = new Date().toISOString()) => {
     return totalSeconds;
 };
 
-if (process.env.SPOTIFY_ACCESS_TOKEN != null) {
-
+const timeUntilTokenExpiration = () => {
     const fileMTime = fs.statSync(envPath).mtime;
 
     const totalSecondsAfterModified = totalTimeElapsed(fileMTime);
     const expirationTime = totalSecondsAfterModified + 3600;
 
     const currentTime = totalTimeElapsed()
+    return expirationTime - currentTime;
+};
 
-    if (currentTime >= expirationTime) {
-        console.log("Token is expired.");
-
-        rrl.read(envPath, 2).then((lines) => {
-            let to_remove = lines.length;
-            fs.stat(envPath, (err, stats) => {
-                if (err) console.log(err);
-                fs.truncate(envPath, stats.size - to_remove, (err) => {
-                    if (err) console.log(err)
-                });
+const replaceToken = () => {
+    rrl.read(envPath, 2).then((lines) => {
+        let to_remove = lines.length;
+        fs.stat(envPath, (err, stats) => {
+            if (err) console.log(err);
+            fs.truncate(envPath, stats.size - to_remove, (err) => {
+                if (err) console.log(err)
             });
         });
-        var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
-        require('child_process').exec(start + ' ' + `http://localhost:${PORT}/login`);
-    } else {
-        console.log("Token is available");
-        spotifyApi.setAccessToken(process.env.SPOTIFY_ACCESS_TOKEN);
-    };
-} else {
+    });
     var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
     require('child_process').exec(start + ' ' + `http://localhost:${PORT}/login`);
+};
+
+const checkToken = () => {
+    if (process.env.SPOTIFY_ACCESS_TOKEN != null) {
+
+        const fileMTime = fs.statSync(envPath).mtime;
+
+        const totalSecondsAfterModified = totalTimeElapsed(fileMTime);
+        const expirationTime = totalSecondsAfterModified + 3600;
+
+        const currentTime = totalTimeElapsed()
+
+        if (currentTime >= expirationTime) {
+            console.log("Token is expired.");
+
+            replaceToken();
+        } else {
+            console.log("Token is available");
+            spotifyApi.setAccessToken(process.env.SPOTIFY_ACCESS_TOKEN);
+        };
+    } else {
+        var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
+        require('child_process').exec(start + ' ' + `http://localhost:${PORT}/login`);
+    };
 };
 
 app.get("/login", (req, res) => {
@@ -110,6 +126,6 @@ app.listen(PORT, () => {
     console.log("App listening on PORT 8000")
 });
 
-module.exports = { spotifyApi }
+module.exports = { spotifyApi, checkToken, replaceToken, timeUntilTokenExpiration };
 
 

@@ -5,7 +5,7 @@ const axios = require("axios");
 const { getCurrentlyPlayingTrack }  = require("./spotifyFetchTrack.js");
 const { spotifyApi } = require("./spotifyAuth.js");
 
-
+// Send Request to Lyrics API
 const getCurrentLyrics = async () => {
     try {
         const currentTrack = await getCurrentlyPlayingTrack(spotifyApi);
